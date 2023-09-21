@@ -1,45 +1,52 @@
 package edu.ifam.dra.chat.service;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import edu.ifam.dra.chat.model.Contato;
+import edu.ifam.dra.chat.dto.DTOMensagem;
 import edu.ifam.dra.chat.model.Mensagem;
 import edu.ifam.dra.chat.repositories.MensagemRepository;
 
 @Service
 public class MensagemService {
+
+	@Autowired
+	private MensagemRepository mensagemRepository;
 	
 	@Autowired
-	MensagemRepository mensagemRepository;
-
-	public List<Mensagem> getMensagens(Long receptorId){
-		return mensagemRepository.findAllByReceptor(receptorId);
-	}
-	/*public List<Mensagem> getMensagens(){
-		return mensagemRepository.findAll();
-	}*/
+	private ContatoService contatoService;
 	
-	public Mensagem getMensagem(Long id) {
-		Optional<Mensagem> optionalMensagem = mensagemRepository.findById(id);
-		if(optionalMensagem.isPresent())
-			return optionalMensagem.get();
-		return new Mensagem();
+	public List<DTOMensagem> getMensagensReceptor(Long idReceptor){
+		List<DTOMensagem> dtoMensagens = new ArrayList<>();
+		List<Mensagem> mensagens = mensagemRepository.findAllByReceptor(contatoService.getContato(idReceptor));
+		for (Mensagem mensagem: mensagens) {
+			dtoMensagens.add(new DTOMensagem(mensagem));
+		}
+		
+		return dtoMensagens;
 	}
 	
-	public Mensagem setMensagem(Mensagem mensagem) {
+	public List<DTOMensagem> getMensagensEmissor(Long idEmissor){
+		List<DTOMensagem> dtoMensagens = new ArrayList<>();
+		List<Mensagem> mensagens = mensagemRepository.findAllByEmissor(contatoService.getContato(idEmissor));
+		for (Mensagem mensagem: mensagens) {
+			dtoMensagens.add(new DTOMensagem(mensagem));
+		}
+		
+		return dtoMensagens;
+	}
+	
+	public Mensagem setMensagemFromDTOMensagem(DTOMensagem dtoMensagem) {
+		Mensagem mensagem = new Mensagem();
+		mensagem.setDataHora(dtoMensagem.getDataHora());
+		mensagem.setConteudo(dtoMensagem.getConteudo());
+		mensagem.setEmissor(contatoService.getContato(dtoMensagem.getIdEmissor()));
+		mensagem.setReceptor(contatoService.getContato(dtoMensagem.getIdReceptor()));
 		return mensagemRepository.save(mensagem);
 	}
 	
-	public Mensagem setMensagem(Long id, Mensagem mensagem) {
-		Optional<Mensagem> optionalMensagem = mensagemRepository.findById(id);
-		if(optionalMensagem.isPresent()) {
-			mensagem.setId(id);
-			return mensagemRepository.save(mensagem);
-		}
-		return new Mensagem();
-	}
+	
 }
